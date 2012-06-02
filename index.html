@@ -8,7 +8,7 @@
         background: url("bg.png");
       }
 
-      #tutorial {
+      #game {
         margin-top: 100px;
         border: 0px solid black;
         border-radius: 10px;
@@ -29,6 +29,7 @@
       
       var player;
       var sprites = [];
+      var ctx;
 
       $(document).ready(function() {
         player = new Sprite("bluelink.png", 30, 25, 50, 50);
@@ -40,12 +41,26 @@
         sprites.push(new Sprite("redlink.png", 30, 25, 100, 300));
         sprites.push(new Sprite("redlink.png", 30, 25, 400, 200));
         sprites.push(new Sprite("redlink.png", 30, 25, 300, 100));
-
+        sprites.push(new Sprite("redlink.png", 30, 25, 300, 100));
         var drunk = new Sprite("drunklink.png", 30, 25, 300, 100);
-        sprites.push(drunk);
         drunk.turnProb = 0.6;
+        sprites.push(drunk);
+
         setInterval(draw,50);
+        ctx = $('#game')[0].getContext('2d');
       });
+
+      function draw() {
+        ctx.clearRect(0,0,500,500);
+        $(sprites).each(function(index) {
+          if (this != player && Math.random() > this.turnProb) {
+            this.direction = Math.round(Math.random() * 3);
+          }
+          if (this.image.loaded) {
+            this.nextFrame();
+          }
+        });
+      }
 
       function Sprite(src, width, height, xPos, yPos) {
         this.frame = 0;
@@ -62,54 +77,38 @@
           this.loaded = true;        
         }
         this.nextFrame = function() {
-          if (!this.stop) {
-            this.frame++;
-            if (this.frame == 11) {
-              this.frame = 0;
-            }
-          } else {
+          switch(this.direction) {
+            case DOWN: 
+              ctx.drawImage(this.image,this.width*this.frame,0,this.width,this.height,this.xPos,this.yPos,this.width,this.height); 
+              if (!this.stop)
+                this.yPos += SPEED;
+              break;
+            case UP:
+              ctx.drawImage(this.image,this.width*this.frame,this.height,this.width,this.height,this.xPos,this.yPos,this.width,this.height); 
+              if (!this.stop)
+                this.yPos -= SPEED;
+              break;
+            case LEFT:
+              ctx.drawImage(this.image,this.width*this.frame,this.height*2,this.width,this.height,this.xPos,this.yPos,this.width,this.height); 
+              if (!this.stop)
+                this.xPos -= SPEED;
+              break;
+            case RIGHT:
+              ctx.save();
+              ctx.scale(-1,1);
+              ctx.drawImage(this.image,this.width*this.frame,this.height*2,this.width,this.height,-this.xPos - this.width,this.yPos,this.width,this.height); 
+              ctx.restore();
+              if (!this.stop)
+                this.xPos += SPEED;
+              break;
+          }
+
+          if (this.stop) {
             this.frame = 0;
-          }
-        }
-      };
-
-      function draw() {
-        var canvas  = document.getElementById('tutorial');
-        var ctx = canvas.getContext('2d');
-
-        ctx.clearRect(0,0,500,500);
-
-        $(sprites).each(function(index) {
-          if (this != player && Math.random() > this.turnProb) {
-            this.direction = Math.round(Math.random() * 3);
-          }
-          if (this.image.loaded) {
-            switch(this.direction) {
-              case DOWN: 
-                ctx.drawImage(this.image,this.width*this.frame,0,this.width,this.height,this.xPos,this.yPos,this.width,this.height); 
-                if (!this.stop)
-                  this.yPos += SPEED;
-                break;
-              case UP:
-                ctx.drawImage(this.image,this.width*this.frame,this.height,this.width,this.height,this.xPos,this.yPos,this.width,this.height); 
-                if (!this.stop)
-                  this.yPos -= SPEED;
-                break;
-              case LEFT:
-                ctx.drawImage(this.image,this.width*this.frame,this.height*2,this.width,this.height,this.xPos,this.yPos,this.width,this.height); 
-                if (!this.stop)
-                  this.xPos -= SPEED;
-                break;
-              case RIGHT:
-                ctx.save();
-                ctx.scale(-1,1);
-                ctx.drawImage(this.image,this.width*this.frame,this.height*2,this.width,this.height,-this.xPos - this.width,this.yPos,this.width,this.height); 
-                ctx.restore();
-                if (!this.stop)
-                  this.xPos += SPEED;
-                break;
-            }
-            this.nextFrame();
+          } else {
+            this.frame++;
+            if (this.frame == 11)
+              this.frame = 0;
             if (this.xPos >= canvasWidth)
               this.direction = LEFT;
             if (this.xPos <= 0)
@@ -119,25 +118,28 @@
             if (this.yPos <= 0)
               this.direction = DOWN;
           }
-        });
-      }
+        }
+      };
 
       $(document).keydown(function(e) {
         switch(e.keyCode){
           case 40:
             player.direction = DOWN;
+            player.stop = false;
             break;
           case 38:
             player.direction = UP;
+            player.stop = false;
             break;
           case 39:
             player.direction = RIGHT;
+            player.stop = false;
             break;
           case 37:
             player.direction = LEFT;
+            player.stop = false;
             break;
         }
-        player.stop = false;
       });
 
       $(document).keyup(function(e) {
@@ -164,7 +166,7 @@
   </head>
   <body>
     <center>
-      <canvas id="tutorial" width="500" height="500"></canvas>
+      <canvas id="game" width="500" height="500"></canvas>
     </center>
   </body>
 </html>

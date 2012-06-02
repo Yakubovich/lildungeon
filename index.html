@@ -75,28 +75,36 @@
         this.stop = false;
         this.image.onload = function() {
           this.loaded = true;        
-        }
+        };
+        this.drawFrame = function(row, col) {
+          if (row >= 0) {
+            ctx.drawImage(this.image, this.width*col,row * this.height,this.width,this.height,this.xPos,this.yPos,this.width,this.height); 
+          } else {
+            row = -row;
+            ctx.drawImage(this.image, this.width*col,row*this.height,this.width,this.height,-this.xPos - this.width,this.yPos,this.width,this.height); 
+          }
+        };
         this.nextFrame = function() {
           switch(this.direction) {
             case DOWN: 
-              ctx.drawImage(this.image,this.width*this.frame,0,this.width,this.height,this.xPos,this.yPos,this.width,this.height); 
+              this.drawFrame(0, this.frame);
               if (!this.stop)
                 this.yPos += SPEED;
               break;
             case UP:
-              ctx.drawImage(this.image,this.width*this.frame,this.height,this.width,this.height,this.xPos,this.yPos,this.width,this.height); 
+              this.drawFrame(1, this.frame);
               if (!this.stop)
                 this.yPos -= SPEED;
               break;
             case LEFT:
-              ctx.drawImage(this.image,this.width*this.frame,this.height*2,this.width,this.height,this.xPos,this.yPos,this.width,this.height); 
+              this.drawFrame(2, this.frame);
               if (!this.stop)
                 this.xPos -= SPEED;
               break;
             case RIGHT:
               ctx.save();
               ctx.scale(-1,1);
-              ctx.drawImage(this.image,this.width*this.frame,this.height*2,this.width,this.height,-this.xPos - this.width,this.yPos,this.width,this.height); 
+              this.drawFrame(-2, this.frame);
               ctx.restore();
               if (!this.stop)
                 this.xPos += SPEED;
@@ -118,7 +126,7 @@
             if (this.yPos <= 0)
               this.direction = DOWN;
           }
-        }
+        };
       };
 
       $(document).keydown(function(e) {

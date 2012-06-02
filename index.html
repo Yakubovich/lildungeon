@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Canvas Test</title>
+    <style>
+
+      body {
+        background: url("bg.png");
+      }
+
+      #tutorial {
+        margin-top: 100px;
+        border: 0px solid black;
+        border-radius: 10px;
+        background: url("grass.jpg");
+        box-shadow: 0px 0px 100px 0px black;
+      }
+
+    </style>
+	  <script src="jquery.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+      var canvasWidth = 500;
+      var canvasHeight = 500;
+      var SPEED = 3;
+      var DOWN = 0;
+      var UP = 1;
+      var LEFT = 2;
+      var RIGHT = 3;
+      
+      var player;
+      var sprites = [];
+
+      $(document).ready(function() {
+        player = new Sprite("bluelink.png", 30, 25, 50, 50);
+        player.stop = true;
+        sprites.push(player);
+        sprites.push(new Sprite("redlink.png", 30, 25, 100, 100));
+        sprites.push(new Sprite("redlink.png", 30, 25, 200, 100));
+        sprites.push(new Sprite("redlink.png", 30, 25, 200, 200));
+        sprites.push(new Sprite("redlink.png", 30, 25, 100, 300));
+        sprites.push(new Sprite("redlink.png", 30, 25, 400, 200));
+        sprites.push(new Sprite("redlink.png", 30, 25, 300, 100));
+
+        var drunk = new Sprite("drunklink.png", 30, 25, 300, 100);
+        sprites.push(drunk);
+        drunk.turnProb = 0.6;
+        setInterval(draw,50);
+      });
+
+      function Sprite(src, width, height, xPos, yPos) {
+        this.frame = 0;
+        this.width = width;
+        this.height = height;
+        this.xPos = xPos;
+        this.yPos = yPos;
+        this.direction = DOWN;
+        this.image = new Image();
+        this.image.src = src;
+        this.turnProb = 0.95;
+        this.stop = false;
+        this.image.onload = function() {
+          this.loaded = true;        
+        }
+        this.nextFrame = function() {
+          if (!this.stop) {
+            this.frame++;
+            if (this.frame == 11) {
+              this.frame = 0;
+            }
+          } else {
+            this.frame = 0;
+          }
+        }
+      };
+
+      function draw() {
+        var canvas  = document.getElementById('tutorial');
+        var ctx = canvas.getContext('2d');
+
+        ctx.clearRect(0,0,500,500);
+
+        $(sprites).each(function(index) {
+          if (this != player && Math.random() > this.turnProb) {
+            this.direction = Math.round(Math.random() * 3);
+          }
+          if (this.image.loaded) {
+            switch(this.direction) {
+              case DOWN: 
+                ctx.drawImage(this.image,this.width*this.frame,0,this.width,this.height,this.xPos,this.yPos,this.width,this.height); 
+                if (!this.stop)
+                  this.yPos += SPEED;
+                break;
+              case UP:
+                ctx.drawImage(this.image,this.width*this.frame,this.height,this.width,this.height,this.xPos,this.yPos,this.width,this.height); 
+                if (!this.stop)
+                  this.yPos -= SPEED;
+                break;
+              case LEFT:
+                ctx.drawImage(this.image,this.width*this.frame,this.height*2,this.width,this.height,this.xPos,this.yPos,this.width,this.height); 
+                if (!this.stop)
+                  this.xPos -= SPEED;
+                break;
+              case RIGHT:
+                ctx.save();
+                ctx.scale(-1,1);
+                ctx.drawImage(this.image,this.width*this.frame,this.height*2,this.width,this.height,-this.xPos - this.width,this.yPos,this.width,this.height); 
+                ctx.restore();
+                if (!this.stop)
+                  this.xPos += SPEED;
+                break;
+            }
+            this.nextFrame();
+            if (this.xPos >= canvasWidth)
+              this.direction = LEFT;
+            if (this.xPos <= 0)
+              this.direction = RIGHT;
+            if (this.yPos >= canvasHeight)
+              this.direction = UP;
+            if (this.yPos <= 0)
+              this.direction = DOWN;
+          }
+        });
+      }
+
+      $(document).keydown(function(e) {
+        switch(e.keyCode){
+          case 40:
+            player.direction = DOWN;
+            break;
+          case 38:
+            player.direction = UP;
+            break;
+          case 39:
+            player.direction = RIGHT;
+            break;
+          case 37:
+            player.direction = LEFT;
+            break;
+        }
+        player.stop = false;
+      });
+
+      $(document).keyup(function(e) {
+        switch(e.keyCode){
+          case 40:
+            if (player.direction == DOWN)
+              player.stop = true;
+            break;
+          case 38:
+            if (player.direction == UP)
+              player.stop = true;
+            break;
+          case 39:
+            if (player.direction == RIGHT)
+              player.stop = true;
+            break;
+          case 37:
+            if (player.direction == LEFT)
+              player.stop = true;
+            break;
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <center>
+      <canvas id="tutorial" width="500" height="500"></canvas>
+    </center>
+  </body>
+</html>

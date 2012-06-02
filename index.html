@@ -32,19 +32,38 @@
       var sprites = [];
 
       $(document).ready(function() {
-        player = new Sprite("bluelink.png", 30, 25, 50, 50);
-        player.stop = true;
+        player = new Sprite({ src:    "bluelink.png",
+                              width:  30,
+                              height: 25,
+                              xPos:   50,
+                              yPos:   50,
+                              stop:   true
+                            });
         sprites.push(player);
-        for (var x = 0; x < 20; x++) {
-          sprites.push(new Sprite("redlink.png", 30, 25, Math.round(Math.random() * canvasWidth), Math.round(Math.random() * canvasHeight)));
+        for (var i = 0; i < 20; i++) {
+          sprites.push(new Sprite({ src: "redlink.png",
+                                    width:  30,
+                                    height: 25,
+                                    xPos:   Math.round(Math.random() * canvasWidth),
+                                    yPos:   Math.round(Math.random() * canvasHeight)
+                                   }));
         }
         
-        var wolf = new Sprite("wolf.png", 38, 39, Math.round(Math.random() * canvasWidth), Math.round(Math.random() * canvasHeight));
-        wolf.totalframes = 3;
+        var wolf = new Sprite({ src:         "wolf.png", 
+                                width:       38,
+                                height:      39,
+                                xPos:        Math.round(Math.random() * canvasWidth), 
+                                yPos:        Math.round(Math.random() * canvasHeight),
+                                totalframes: 3
+                              });
         sprites.push(wolf);
-
-        var drunk = new Sprite("drunklink.png", 30, 25, 300, 100);
-        drunk.turnProb = 0.6;
+        var drunk = new Sprite({ src:      "drunklink.png",
+                                 width:    30, 
+                                 height:   25,
+                                 xPos:     300,
+                                 yPos:     100,
+                                 turnprob: 0.6
+                                });
         sprites.push(drunk);
 
         setInterval(draw,50);
@@ -71,18 +90,33 @@
         });
       }
 
-      function Sprite(src, width, height, xPos, yPos) {
+      /* Requied args: src, width, height, xPos, yPos */
+      /* Optional args: turnprob, totalframes, stop */
+      function Sprite(args) {
         this.frame = 0;
-        this.width = width;
-        this.height = height;
-        this.xPos = xPos;
-        this.yPos = yPos;
-        this.totalframes = 11;
+        this.width = args.width;
+        this.height = args.height;
+        this.xPos = args.xPos;
+        this.yPos = args.yPos;
         this.direction = DOWN;
         this.image = new Image();
-        this.image.src = src;
-        this.turnProb = 0.95;
-        this.stop = false;
+        this.image.src = args.src;
+
+        if (args.turnprob)
+          this.turnProb = args.turnprob;
+        else
+          this.turnProb = 0.95;
+
+        if (args.totalframes)
+          this.totalframes = args.totalframes;
+        else
+          this.totalframes = 11;
+
+        if (args.stop)
+          this.stop = true;
+        else
+          this.stop = false;
+
         this.image.onload = function() {
           this.loaded = true;        
         };

@@ -22,15 +22,42 @@ $(document).ready(function() {
                         stop:   true
                       });
   sprites.push(player);
-  for (var i = 0; i < 6; i++) {
-    sprites.push(new Sprite({ src: "redlink.png",
-                              width:  30,
-                              height: 25,
-                              xPos:   Math.round(Math.random() * canvasWidth),
-                              yPos:   Math.round(Math.random() * canvasHeight)
-                             }));
+
+  sprites.push(new Wall({ width: 300, height: 10, xPos: 100, yPos: 100 }));
+  sprites.push(new Wall({ width: 10, height: 300, xPos: 100, yPos: 100 }));
+  sprites.push(new Wall({ width: 10, height: 200, xPos: 300, yPos: 100 }));
+
+  var guy;
+  var hit;
+  for (var i = 0; i < 20; i++) {
+    hit = true;
+    while (hit) {
+      hit = false;
+      guy = new Sprite({ src: "redlink.png",
+                         width:  30,
+                         height: 25,
+                         xPos:   Math.round(Math.random() * canvasWidth),
+                         yPos:   Math.round(Math.random() * canvasHeight)
+                       });
+      if (i == 0) {
+        guy.zombie = true;
+        guy.speed = 1;
+        guy.turnprob = 0.6;
+        guy.image.src = "zombielink.png";
+      }
+
+      for (var i2 = 0; i2 < sprites.length; i2++) {
+        if (hitTest(guy, sprites[i2])) {
+          hit = true;
+          break;
+        }
+      }
+    }
+    sprites.push(guy);
   }
+
   
+  /*
   wolf = new Sprite({ src:         "wolf.png", 
                       width:       38,
                       height:      39,
@@ -40,17 +67,7 @@ $(document).ready(function() {
                       speed:       1
                     });
   sprites.push(wolf);
-  var drunk = new Sprite({ src:      "drunklink.png",
-                           width:    30, 
-                           height:   25,
-                           xPos:     300,
-                           yPos:     200,
-                           turnprob: 0.6
-                          });
-  sprites.push(drunk);
-
-  var wall = new Wall({ width: 300, height: 20, xPos: 100, yPos: 100 });
-  sprites.push(wall);
+  */
 
   /* Start draw loop */
   setInterval(draw,50);
@@ -78,28 +95,14 @@ function draw() {
     theSprite = sprites[index];
     
     if (theSprite != player && Math.random() > theSprite.turnProb) {
-      var random = Math.round(Math.random() * 4);
-      switch(random){
-        case 0:
-          theSprite.direction = -1;
-          break;
-        case 1:
-          theSprite.direction = 1;
-          break;
-        case 2:
-          theSprite.direction = -2;
-          break;
-        case 3:
-          theSprite.direction = 2;
-          break;
-      }
+      theSprite.randomDir();
     }
 
-    if (theSprite.xPos >= canvasWidth)
+    if (theSprite.xPos + theSprite.width >= canvasWidth)
       theSprite.direction = LEFT;
     if (theSprite.xPos <= 0)
       theSprite.direction = RIGHT;
-    if (theSprite.yPos >= canvasHeight)
+    if (theSprite.yPos + theSprite.height >= canvasHeight)
       theSprite.direction = UP;
     if (theSprite.yPos <= 0)
       theSprite.direction = DOWN;
@@ -120,6 +123,10 @@ function draw() {
       if (hitTest(theSprite, sprites[index2])) {
         theSprite.reverse();
         sprites[index2].reverse();
+        if (theSprite.zombie || sprites[index2].zombie) {
+          theSprite.zombify();
+          sprites[index2].zombify();
+        }
       }
     }
     
@@ -147,6 +154,7 @@ function Wall (args) {
     ctx.fillRect(this.xPos, this.yPos, this.width, this.height);
   };
   this.reverse = function () {};
+  this.zombify = function () {};
 }
 
 /* Requied args: src, width, height, xPos, yPos */
@@ -159,9 +167,13 @@ function Sprite(args) {
   this.yPos = args.yPos;
   this.xPosOld = args.xPos;
   this.yPosOld = args.yPos;
-  this.direction = DOWN;
   this.image = new Image();
   this.image.src = args.src;
+  
+  if (args.zombie)
+    this.zombie = true;
+  else
+    this.zombie = false;
 
   if (args.turnprob)
     this.turnProb = args.turnprob;
@@ -186,6 +198,33 @@ function Sprite(args) {
   this.image.onload = function() {
     this.loaded = true;        
   };
+
+  this.zombify = function() {
+    this.zombie = true;
+    this.speed = 1;
+    this.image.src = "zombielink.png";
+  };
+
+  this.randomDir = function() {
+    var random = Math.round(Math.random() * 4);
+    switch(random){
+      case 0:
+        this.direction = -1;
+        break;
+      case 1:
+        this.direction = 1;
+        break;
+      case 2:
+        this.direction = -2;
+        break;
+      case 3:
+        this.direction = 2;
+        break;
+    }
+  };
+
+  /* Call this a sprite is intialized */
+  this.randomDir();
 
   this.reverse = function() {
     if (this != player)

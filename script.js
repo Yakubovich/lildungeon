@@ -1,10 +1,13 @@
 var canvasWidth = 500;
 var canvasHeight = 500;
 var SPEED = 3;
-var DOWN = 1;
-var UP = -1;
-var LEFT = -2;
-var RIGHT = 2;
+var DOWN = 0;
+var UP = 1;
+var LEFT = 2;
+var RIGHT = -2;
+
+var CHAR = 0;
+var WALL = 1;
 
 var ctx;
 var player;
@@ -13,7 +16,7 @@ var sprites = [];
 
 $(document).ready(function() {
 
-  /* Initiate sprites */
+  /* Initialize player */
   player = new Sprite({ src:    "bluelink.png",
                         width:  30,
                         height: 25,
@@ -23,13 +26,15 @@ $(document).ready(function() {
                       });
   sprites.push(player);
 
+  /* Initialize walls */
   sprites.push(new Wall({ width: 300, height: 10, xPos: 100, yPos: 100 }));
   sprites.push(new Wall({ width: 10, height: 300, xPos: 100, yPos: 100 }));
   sprites.push(new Wall({ width: 10, height: 200, xPos: 300, yPos: 100 }));
 
+  /* Place some sprites in non-colliding positions around the map */
   var guy;
   var hit;
-  for (var i = 0; i < 20; i++) {
+  for (var i = 0; i < 40; i++) {
     hit = true;
     while (hit) {
       hit = false;
@@ -75,11 +80,14 @@ $(document).ready(function() {
   ctx = $('#game')[0].getContext('2d');
 });
 
+
+
+/* Returns true if r1 and r2 are overlapping */
 function hitTest (r1, r2) {
-  if ((r1.xPos + r1.width >= r2.xPos) &&
-      (r1.xPos <= r2.xPos + r2.width) &&
-      (r1.yPos + r1.height >= r2.yPos) &&
-      (r1.yPos <= r2.yPos + r2.height))
+  if ((r1.position.x + r1.width >= r2.position.x) &&
+      (r1.position.x <= r2.position.x + r2.width) &&
+      (r1.position.y + r1.height >= r2.position.y) &&
+      (r1.position.y <= r2.position.y + r2.height))
      return true;
   else
      return false;
@@ -98,31 +106,27 @@ function draw() {
       theSprite.randomDir();
     }
 
-    if (theSprite.xPos + theSprite.width >= canvasWidth)
+    if (theSprite.position.x + theSprite.width >= canvasWidth)
       theSprite.direction = LEFT;
-    if (theSprite.xPos <= 0)
+    if (theSprite.position.x <= 0)
       theSprite.direction = RIGHT;
-    if (theSprite.yPos + theSprite.height >= canvasHeight)
+    if (theSprite.position.y + theSprite.height >= canvasHeight)
       theSprite.direction = UP;
-    if (theSprite.yPos <= 0)
+    if (theSprite.position.y <= 0)
       theSprite.direction = DOWN;
 
-    if (theSprite == wolf) {
-      if (theSprite.xPos < player.xPos + 40)
-        theSprite.direction = RIGHT;
-      if (theSprite.xPos > player.xPos - 40)
-        theSprite.direction = LEFT;
-      if (theSprite.yPos > player.yPos)
-        theSprite.direction = UP;
-      if (theSprite.yPos < player.yPos)
-        theSprite.direction = DOWN;
-    }
 
     /* Collision detection */
     for (var index2 = index + 1; index2 < sprites.length; index2++) {
       if (hitTest(theSprite, sprites[index2])) {
-        theSprite.reverse();
-        sprites[index2].reverse();
+        if (theSprite.type == WALL) {
+          sprites[index2].reverse();
+          sprites[index2].frustration+=10;
+        }
+        if (sprites[index2].type == WALL) {
+          theSprite.reverse();
+          theSprite.frustration+= 10;
+        }
         if (theSprite.zombie || sprites[index2].zombie) {
           theSprite.zombify();
           sprites[index2].zombify();
@@ -137,21 +141,36 @@ function draw() {
 
   /* Sort by Y position so that lower sprites overlap higher ones */
   sprites.sort(function(a, b) {
-    var a1 = a.yPos + a.height, b1 = b.yPos + b.height;
+    var a1 = a.position.y + a.height, b1 = b.position.y + b.height;
     if (a1 == b1) return 0;
     return a1 > b1 ? 1 : -1;
   });
 }
 
+function Position (x, y) {
+  this.x = x;
+  this.y = y;
+
+  this.add = function(p2) {
+    this.x += p2.x;
+    this.y += p2.y; 
+  };
+
+  this.subtract = function(p2) {
+    this.x -= p2.x;
+    this.y -= p2.y; 
+  };
+}
+
 function Wall (args) {
-  this.xPos = args.xPos;
-  this.yPos = args.yPos;
+  this.type = WALL;
+  this.position = new Position(args.xPos, args.yPos);
   this.width = args.width;
   this.height = args.height;
   this.image = new Object ();
   this.image.loaded = true;
   this.nextFrame = function () {
-    ctx.fillRect(this.xPos, this.yPos, this.width, this.height);
+    ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
   };
   this.reverse = function () {};
   this.zombify = function () {};
@@ -160,15 +179,16 @@ function Wall (args) {
 /* Requied args: src, width, height, xPos, yPos */
 /* Optional args: turnprob, totalframes, stop, speed */
 function Sprite(args) {
+  this.type = CHAR;
   this.frame = 0;
   this.width = args.width;
   this.height = args.height;
-  this.xPos = args.xPos;
-  this.yPos = args.yPos;
-  this.xPosOld = args.xPos;
-  this.yPosOld = args.yPos;
+  this.position = new Position(args.xPos, args.yPos);
+  this.oldPosition = new Position(args.xPos, args.yPos);
   this.image = new Image();
   this.image.src = args.src;
+  this.movement = new Position(0,0);
+  this.frustration = 0;
   
   if (args.zombie)
     this.zombie = true;
@@ -205,35 +225,65 @@ function Sprite(args) {
     this.image.src = "zombielink.png";
   };
 
+  this.goTo = function(target) {
+    var delta = new Position(target.x, target.y);
+    delta.subtract(this.position);
+    var angle = Math.atan2(delta.y, delta.x);
+    this.movement.x = Math.cos(angle) * this.speed;
+    this.movement.y = Math.sin(angle) * this.speed;
+    
+    if (angle > 0)
+      this.direction = DOWN;
+    else
+      this.direction = UP;
+  };
+
   this.randomDir = function() {
-    var random = Math.round(Math.random() * 4);
+    var random = Math.ceil(Math.random() * 4);
     switch(random){
-      case 0:
-        this.direction = -1;
-        break;
       case 1:
-        this.direction = 1;
+        this.direction = UP;
         break;
       case 2:
-        this.direction = -2;
+        this.direction = DOWN;
         break;
       case 3:
-        this.direction = 2;
+        this.direction = LEFT;
+        break;
+      case 4:
+        this.direction = RIGHT
         break;
     }
+    this.frustration--;
   };
 
   /* Call this a sprite is intialized */
   this.randomDir();
 
   this.reverse = function() {
-    if (this != player)
-      this.direction = -this.direction;
-    else
+    if (this != player) {
+      switch(this.direction) {
+        case UP:
+          this.direction = DOWN;
+          break;
+        case DOWN:
+          this.direction = UP;
+          break;
+        case LEFT:
+          this.direction = RIGHT;
+          break;
+        case RIGHT:
+          this.direction = LEFT;
+          break;
+      }
+    } else {
       this.stop = true;
+    }
 
     this.xPos = this.xPosOld;
     this.yPos = this.yPosOld;
+    this.position.x = this.oldPosition.x;
+    this.position.y = this.oldPosition.y;
   };
 
   /* Draw a single frame */
@@ -244,8 +294,8 @@ function Sprite(args) {
                     row * this.height,
                     this.width,
                     this.height,
-                    this.xPos,
-                    this.yPos,
+                    this.position.x,
+                    this.position.y,
                     this.width,
                     this.height); 
     } else {
@@ -257,8 +307,8 @@ function Sprite(args) {
                     row * this.height,
                     this.width,
                     this.height,
-                    -this.xPos - this.width,
-                    this.yPos,
+                    -this.position.x - this.width,
+                    this.position.y,
                     this.width,
                     this.height); 
       ctx.restore();
@@ -271,28 +321,49 @@ function Sprite(args) {
     this.xPosOld = this.xPos;
     this.yPosOld = this.yPos;
 
-    switch(this.direction) {
-      case DOWN: 
-        this.drawFrame(0, this.frame);
-        if (!this.stop)
-          this.yPos += this.speed;
-        break;
-      case UP:
-        this.drawFrame(1, this.frame);
-        if (!this.stop)
-          this.yPos -= this.speed;
-        break;
-      case LEFT:
-        this.drawFrame(2, this.frame);
-        if (!this.stop)
-          this.xPos -= this.speed;
-        break;
-      case RIGHT:
-        this.drawFrame(-2, this.frame);
-        if (!this.stop)
-          this.xPos += this.speed;
-        break;
+    this.oldPosition.x = this.position.x;
+    this.oldPosition.y = this.position.y;
+
+    this.movement.x = 0;
+    this.movement.y = 0;
+
+
+    if (this.zombie && this.frustration < 100) {
+      this.goTo(player.position);
+      this.drawFrame(this.direction, this.frame);
+    } else {
+      switch(this.direction) {
+        case DOWN: 
+          this.drawFrame(0, this.frame);
+          if (!this.stop) {
+            this.movement.x = 0;
+            this.movement.y = this.speed;
+          }
+          break;
+        case UP:
+          this.drawFrame(1, this.frame);
+          if (!this.stop) {
+            this.movement.x = 0;
+            this.movement.y = -this.speed;
+          }
+          break;
+        case LEFT:
+          this.drawFrame(2, this.frame);
+          if (!this.stop) {
+            this.movement.x = -this.speed;
+            this.movement.y = 0;
+          }
+          break;
+        case RIGHT:
+          this.drawFrame(-2, this.frame);
+          if (!this.stop) {
+            this.movement.x = this.speed
+            this.movement.y = 0;
+          }
+          break;
+      }
     }
+    this.position.add(this.movement);
 
     if (this.stop) {
       this.frame = 0;

@@ -160,6 +160,12 @@ function Position (x, y) {
     this.x -= p2.x;
     this.y -= p2.y; 
   };
+
+  this.distanceTo = function(p2) {
+    var dx = this.x - p2.x;
+    var dy = this.y - p2.y;
+    return Math.sqrt((dx * dx) + (dy * dy));
+  }; 
 }
 
 function Wall (args) {
@@ -232,10 +238,19 @@ function Sprite(args) {
     this.movement.x = Math.cos(angle) * this.speed;
     this.movement.y = Math.sin(angle) * this.speed;
     
-    if (angle > 0)
-      this.direction = DOWN;
-    else
-      this.direction = UP;
+    if (angle > 0) {
+      if (angle > 3 * Math.PI / 4)
+        this.direction = LEFT;
+      else
+        this.direction = DOWN;
+    } else {
+      if (angle > - Math.PI / 4)
+        this.direction = RIGHT;
+      else
+        this.direction = UP;
+    }
+
+    console.log(angle);
   };
 
   this.randomDir = function() {
@@ -327,10 +342,22 @@ function Sprite(args) {
     this.movement.x = 0;
     this.movement.y = 0;
 
-
     if (this.zombie && this.frustration < 100) {
-      this.goTo(player.position);
+      var target = player.position;
+      /*
+      var greatest = 0;
+      var distance = 0;
+      for (var i = 0; i < sprites.length; i++) {
+        distance = this.position.distanceTo(sprites[i].position); 
+        if (distance > greatest) {
+          greatest = distance;
+          target = sprites[i].position;
+        }
+      }
+      */
+      this.goTo(target);
       this.drawFrame(this.direction, this.frame);
+
     } else {
       switch(this.direction) {
         case DOWN: 

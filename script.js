@@ -8,6 +8,7 @@ var RIGHT = -2;
 
 var CHAR = 0;
 var WALL = 1;
+var ZOMBIE = 2;
 
 var ctx;
 var player;
@@ -45,7 +46,7 @@ $(document).ready(function() {
                          yPos:   Math.round(Math.random() * canvasHeight)
                        });
       if (i == 0) {
-        guy.zombie = true;
+        guy.type = ZOMBIE;
         guy.speed = 1;
         guy.turnprob = 0.6;
         guy.image.src = "zombielink.png";
@@ -127,7 +128,7 @@ function draw() {
           theSprite.reverse();
           theSprite.frustration+= 10;
         }
-        if (theSprite.zombie || sprites[index2].zombie) {
+        if (theSprite.type == ZOMBIE || sprites[index2].type == ZOMBIE) {
           theSprite.zombify();
           sprites[index2].zombify();
         }
@@ -185,7 +186,6 @@ function Wall (args) {
 /* Requied args: src, width, height, xPos, yPos */
 /* Optional args: turnprob, totalframes, stop, speed */
 function Sprite(args) {
-  this.type = CHAR;
   this.frame = 0;
   this.width = args.width;
   this.height = args.height;
@@ -197,9 +197,9 @@ function Sprite(args) {
   this.frustration = 0;
   
   if (args.zombie)
-    this.zombie = true;
+    this.type = ZOMBIE;
   else
-    this.zombie = false;
+    this.type = CHAR;
 
   if (args.turnprob)
     this.turnProb = args.turnprob;
@@ -226,7 +226,7 @@ function Sprite(args) {
   };
 
   this.zombify = function() {
-    this.zombie = true;
+    this.type = ZOMBIE;
     this.speed = 1;
     this.image.src = "zombielink.png";
   };
@@ -342,7 +342,7 @@ function Sprite(args) {
     this.movement.x = 0;
     this.movement.y = 0;
 
-    if (this.zombie && this.frustration < 100) {
+    if (this.type == ZOMBIE && this.frustration < 100) {
       var target = player.position;
       /*
       var greatest = 0;

@@ -11,6 +11,7 @@ var RIGHT = 1;
 var CHAR = 0;
 var WALL = 1;
 var ZOMBIE = 2;
+var DEAD = 3;
 
 var ctx;
 var player;
@@ -30,15 +31,17 @@ $(document).ready(function() {
   sprites.push(player);
 
   /* Initialize walls */
+  /*
   sprites.push(new Wall({ width: 20, height: 200, xPos: 150, yPos: 0 }));
   sprites.push(new Wall({ width: 400, height: 200, xPos: 300, yPos: 100 }));
   sprites.push(new Wall({ width: 400, height: 100, xPos: 0, yPos: 400 }));
   sprites.push(new Wall({ width: 30, height: 400, xPos: 0, yPos: 0 }));
+  */
 
   /* Place some sprites in non-colliding positions around the map */
   var guy;
   var hit;
-  for (var i = 0; i < 40; i++) {
+  for (var i = 0; i < 30; i++) {
     hit = true;
     while (hit) {
       hit = false;
@@ -50,7 +53,7 @@ $(document).ready(function() {
                        });
       if (i == 0) {
         guy.type = ZOMBIE;
-        guy.speed = 1;
+        guy.speed = 2;
         guy.turnprob = 0.6;
         guy.image.src = "ch-zombie.png";
       }
@@ -106,7 +109,7 @@ function draw() {
 
     theSprite = sprites[index];
     
-    if (theSprite != player && Math.random() > theSprite.turnProb) {
+    if (theSprite != player && Math.random() > theSprite.turnProb && theSprite.type != DEAD) {
       theSprite.randomDir();
     }
 
@@ -135,12 +138,12 @@ function draw() {
           theSprite.zombify();
           sprites[index2].zombify();
         } else {
-          if (theSprite == player && sprites[index2].type != WALL) {
+          if (theSprite == player && sprites[index2].type != WALL && sprites[index2].type != DEAD) {
             sprites.splice(index2, 1);
             score++;
             $("#score").html(score);
           }
-          if (sprites[index2] == player && theSprite.type != WALL) {
+          if (sprites[index2] == player && theSprite.type != WALL && theSprite.type != DEAD) {
             sprites.splice(index, 1);
             score++;
             $("#score").html(score);
@@ -165,6 +168,7 @@ function draw() {
 function Position (x, y) {
   this.x = x;
   this.y = y;
+  this.position = this;
 
   this.add = function(p2) {
     this.x += p2.x;
@@ -240,9 +244,11 @@ function Sprite(args) {
   };
 
   this.zombify = function() {
-    this.type = ZOMBIE;
-    this.speed = 1;
-    this.image.src = "ch-zombie.png";
+    if (this.type != DEAD) {
+      this.type = ZOMBIE;
+      this.speed = 2;
+      this.image.src = "ch-zombie.png";
+    }
   };
 
   this.goTo = function(target) {
@@ -263,8 +269,6 @@ function Sprite(args) {
       else
         this.direction = UP;
     }
-
-    console.log(angle);
   };
 
   this.randomDir = function() {
@@ -356,52 +360,41 @@ function Sprite(args) {
     this.movement.x = 0;
     this.movement.y = 0;
 
-    if (this.type == ZOMBIE && this.frustration < 100) {
-      var target = player.position;
-      /*
-      var greatest = 0;
-      var distance = 0;
-      for (var i = 0; i < sprites.length; i++) {
-        distance = this.position.distanceTo(sprites[i].position); 
-        if (distance > greatest) {
-          greatest = distance;
-          target = sprites[i].position;
-        }
-      }
-      */
-      this.goTo(target);
-      this.drawFrame(this.direction, this.frame);
-
+    if (this.type == DEAD) {
+      //temporary, will be part of sprite
+      var img = new Image();
+      img.src = "dead-zombie.png";
+      ctx.drawImage(img, 
+                    0,
+                    0,
+                    22,
+                    10,
+                    this.position.x,
+                    this.position.y + 10,
+                    22,
+                    10); 
     } else {
-      switch(this.direction) {
-        case DOWN: 
-          this.drawFrame(2, this.frame);
-          if (!this.stop) {
-            this.movement.x = 0;
+      this.drawFrame(this.direction, this.frame);
+    }
+
+    if (this.type == ZOMBIE && this.frustration < 100 && Math.random() > 0.95) {
+      this.goTo(player.position);
+    } else {
+      if (!this.stop) {
+        switch(this.direction) {
+          case DOWN: 
             this.movement.y = this.speed;
-          }
-          break;
-        case UP:
-          this.drawFrame(0, this.frame);
-          if (!this.stop) {
-            this.movement.x = 0;
+            break;
+          case UP:
             this.movement.y = -this.speed;
-          }
-          break;
-        case LEFT:
-          this.drawFrame(-1, this.frame);
-          if (!this.stop) {
+            break;
+          case LEFT:
             this.movement.x = -this.speed;
-            this.movement.y = 0;
-          }
-          break;
-        case RIGHT:
-          this.drawFrame(1, this.frame);
-          if (!this.stop) {
+            break;
+          case RIGHT:
             this.movement.x = this.speed
-            this.movement.y = 0;
-          }
-          break;
+            break;
+        }
       }
     }
     this.position.add(this.movement);
@@ -416,6 +409,43 @@ function Sprite(args) {
 
   };
 };
+
+$(document).keypress(function(e) {
+  if (e.keyCode != 32)
+    return 0;
+
+  var lineOfFire;
+
+  switch(player.direction) {
+    case UP:
+      lineOfFire = new Wall({ width: player.width, height: canvasHeight, xPos: player.position.x, yPos: player.position.y - canvasHeight });
+      break;
+    case DOWN:
+      lineOfFire = new Wall({ width: player.width, height: canvasHeight, xPos: player.position.x, yPos: player.position.y});
+      break;
+    case LEFT:
+      lineOfFire = new Wall({ width: canvasWidth, height: player.height, xPos: player.position.x - canvasWidth, yPos: player.position.y});
+      break;
+    case RIGHT:
+      lineOfFire = new Wall({ width: canvasWidth, height: player.height, xPos: player.position.x, yPos: player.position.y});
+      break;
+  }
+
+  var minDist = 10000;
+  var dist;
+  var victim = -1;
+  $(sprites).each(function(index, element) {
+    dist = player.position.distanceTo(this.position);
+    if (hitTest(this, lineOfFire) && this != player && dist < minDist && this.type != DEAD) {
+      victim = index;
+      minDist = dist;
+    }
+  });
+  if (victim > 0) {
+    sprites[victim].stop = true;
+    sprites[victim].type = DEAD;
+  }
+});
 
 $(document).keydown(function(e) {
   switch(e.keyCode){

@@ -2,8 +2,11 @@ body {
   background: url("bg.png");
 }
 
+#score {
+  color: white;
+}
+
 #game {
-  margin-top: 100px;
   border: 0px solid black;
   border-radius: 10px;
   background: url("grass.jpg");

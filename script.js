@@ -1,3 +1,5 @@
+var score = 0;
+
 var canvasWidth = 500;
 var canvasHeight = 500;
 var SPEED = 3;
@@ -28,9 +30,10 @@ $(document).ready(function() {
   sprites.push(player);
 
   /* Initialize walls */
-  sprites.push(new Wall({ width: 300, height: 10, xPos: 100, yPos: 100 }));
-  sprites.push(new Wall({ width: 10, height: 300, xPos: 100, yPos: 100 }));
-  sprites.push(new Wall({ width: 10, height: 200, xPos: 300, yPos: 100 }));
+  sprites.push(new Wall({ width: 20, height: 200, xPos: 150, yPos: 0 }));
+  sprites.push(new Wall({ width: 400, height: 200, xPos: 300, yPos: 100 }));
+  sprites.push(new Wall({ width: 400, height: 100, xPos: 0, yPos: 400 }));
+  sprites.push(new Wall({ width: 30, height: 400, xPos: 0, yPos: 0 }));
 
   /* Place some sprites in non-colliding positions around the map */
   var guy;
@@ -131,6 +134,17 @@ function draw() {
         if (theSprite.type == ZOMBIE || sprites[index2].type == ZOMBIE) {
           theSprite.zombify();
           sprites[index2].zombify();
+        } else {
+          if (theSprite == player && sprites[index2].type != WALL) {
+            sprites.splice(index2, 1);
+            score++;
+            $("#score").html(score);
+          }
+          if (sprites[index2] == player && theSprite.type != WALL) {
+            sprites.splice(index, 1);
+            score++;
+            $("#score").html(score);
+          }
         }
       }
     }

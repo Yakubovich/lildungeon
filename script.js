@@ -3,10 +3,10 @@ var score = 0;
 var canvasWidth = 500;
 var canvasHeight = 500;
 var SPEED = 3;
-var DOWN = 0;
-var UP = 1;
-var LEFT = 2;
-var RIGHT = -2;
+var DOWN = 2;
+var UP = 0;
+var LEFT = -1;
+var RIGHT = 1;
 
 var CHAR = 0;
 var WALL = 1;
@@ -20,9 +20,9 @@ var sprites = [];
 $(document).ready(function() {
 
   /* Initialize player */
-  player = new Sprite({ src:    "bluelink.png",
-                        width:  30,
-                        height: 25,
+  player = new Sprite({ src:    "ch-hero.png",
+                        width:  24,
+                        height: 33,
                         xPos:   canvasWidth/2,
                         yPos:   3,
                         stop:   true
@@ -42,9 +42,9 @@ $(document).ready(function() {
     hit = true;
     while (hit) {
       hit = false;
-      guy = new Sprite({ src: "redlink.png",
-                         width:  30,
-                         height: 25,
+      guy = new Sprite({ src: "ch-guy.png",
+                         width:  24,
+                         height: 33,
                          xPos:   Math.round(Math.random() * canvasWidth),
                          yPos:   Math.round(Math.random() * canvasHeight)
                        });
@@ -52,7 +52,7 @@ $(document).ready(function() {
         guy.type = ZOMBIE;
         guy.speed = 1;
         guy.turnprob = 0.6;
-        guy.image.src = "zombielink.png";
+        guy.image.src = "ch-zombie.png";
       }
 
       for (var i2 = 0; i2 < sprites.length; i2++) {
@@ -223,7 +223,7 @@ function Sprite(args) {
   if (args.totalframes)
     this.totalframes = args.totalframes;
   else
-    this.totalframes = 11;
+    this.totalframes = 3;
 
   if (args.speed)
     this.speed = args.speed;
@@ -242,7 +242,7 @@ function Sprite(args) {
   this.zombify = function() {
     this.type = ZOMBIE;
     this.speed = 1;
-    this.image.src = "zombielink.png";
+    this.image.src = "ch-zombie.png";
   };
 
   this.goTo = function(target) {
@@ -375,28 +375,28 @@ function Sprite(args) {
     } else {
       switch(this.direction) {
         case DOWN: 
-          this.drawFrame(0, this.frame);
+          this.drawFrame(2, this.frame);
           if (!this.stop) {
             this.movement.x = 0;
             this.movement.y = this.speed;
           }
           break;
         case UP:
-          this.drawFrame(1, this.frame);
+          this.drawFrame(0, this.frame);
           if (!this.stop) {
             this.movement.x = 0;
             this.movement.y = -this.speed;
           }
           break;
         case LEFT:
-          this.drawFrame(2, this.frame);
+          this.drawFrame(-1, this.frame);
           if (!this.stop) {
             this.movement.x = -this.speed;
             this.movement.y = 0;
           }
           break;
         case RIGHT:
-          this.drawFrame(-2, this.frame);
+          this.drawFrame(1, this.frame);
           if (!this.stop) {
             this.movement.x = this.speed
             this.movement.y = 0;

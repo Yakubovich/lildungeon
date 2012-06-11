@@ -12,13 +12,20 @@ var CHAR = 0;
 var WALL = 1;
 var ZOMBIE = 2;
 var DEAD = 3;
+var SHOTGUN = 4;
 
 var ctx;
 var player;
 var wolf;
+var ammo;
+var shotgunPresent = false;
 var sprites = [];
 
 $(document).ready(function() {
+
+  ammo = 0;
+  shotgunPresent = false;
+  $("#ammo").html(ammo);
 
   /* Initialize player */
   player = new Sprite({ src:    "ch-hero.png",
@@ -31,8 +38,8 @@ $(document).ready(function() {
   sprites.push(player);
 
   /* Initialize walls */
+  sprites.push(new Wall({ width: 200, height: 200, xPos: 200, yPos: 200 }));
   /*
-  sprites.push(new Wall({ width: 20, height: 200, xPos: 150, yPos: 0 }));
   sprites.push(new Wall({ width: 400, height: 200, xPos: 300, yPos: 100 }));
   sprites.push(new Wall({ width: 400, height: 100, xPos: 0, yPos: 400 }));
   sprites.push(new Wall({ width: 30, height: 400, xPos: 0, yPos: 0 }));
@@ -105,6 +112,22 @@ function hitTest (r1, r2) {
 function draw() {
   ctx.clearRect(0,0,500,500);
   var theSprite, theOtherSprite;
+
+  if (Math.random() > 0.995 && !shotgunPresent) {
+    var shotgun = new Item({ type: SHOTGUN, src: "shotgun.png", width: 24, height: 7, xPos: Math.random() * canvasWidth, yPos: Math.random() * canvasHeight });
+    sprites.push(shotgun);
+    shotgunPresent = true;
+    var hit = false;
+    $(sprites).each(function(){
+      if (this != shotgun) {
+        if (hitTest(this, shotgun)) {
+          sprites.pop();
+          shotgunPresent = false;
+        }
+      }
+    });
+  }
+
   for (var index = 0; index < sprites.length; index++) {
 
     theSprite = sprites[index];
@@ -124,8 +147,21 @@ function draw() {
 
 
     /* Collision detection */
+    var elementToRemove = -1;
     for (var index2 = index + 1; index2 < sprites.length; index2++) {
       if (hitTest(theSprite, sprites[index2])) {
+        if (theSprite.type == SHOTGUN && sprites[index2] == player) {
+          ammo += 5;
+          $("#ammo").html(ammo);
+          shotgunPresent = false;
+          elementToRemove = index;
+        }
+        if (sprites[index2].type == SHOTGUN && theSprite == player) {
+          ammo += 5;
+          $("#ammo").html(ammo);
+          shotgunPresent = false;
+          elementToRemove = index2;
+        }
         if (theSprite.type == WALL) {
           sprites[index2].reverse();
           sprites[index2].frustration+=10;
@@ -157,6 +193,10 @@ function draw() {
     }
   }
 
+  if (elementToRemove >= 0) {
+    sprites.splice(elementToRemove,1);
+  }
+
   /* Sort by Y position so that lower sprites overlap higher ones */
   sprites.sort(function(a, b) {
     var a1 = a.position.y + a.height, b1 = b.position.y + b.height;
@@ -185,6 +225,29 @@ function Position (x, y) {
     var dy = this.y - p2.y;
     return Math.sqrt((dx * dx) + (dy * dy));
   }; 
+}
+
+function Item (args) {
+  this.type = args.type;
+  this.position = new Position(args.xPos, args.yPos);
+  this.width = args.width;
+  this.height = args.height;
+  this.image = new Image ();
+  this.image.src = args.src;
+  this.image.loaded = true;
+  this.nextFrame = function () {
+    ctx.drawImage(this.image,
+                  0,
+                  0,
+                  this.width,
+                  this.height,
+                  this.position.x,
+                  this.position.y,
+                  this.width,
+                  this.height);
+  }
+  this.reverse = function () {};
+  this.zombify = function () {};
 }
 
 function Wall (args) {
@@ -411,8 +474,12 @@ function Sprite(args) {
 };
 
 $(document).keypress(function(e) {
-  if (e.keyCode != 32)
+  if (e.keyCode != 32 || ammo < 1)
     return 0;
+
+  ammo --;
+
+  $("#ammo").html(ammo);
 
   var lineOfFire;
 

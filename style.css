@@ -2,7 +2,7 @@ body {
   background: url("bg.png");
 }
 
-#score {
+h1 {
   color: white;
 }
 

@@ -23,17 +23,6 @@ var sprites = [];
 
 $(document).ready(function() {
 
-  window.requestAnimFrame = (function(){
-    return  window.requestAnimationFrame       || 
-            window.webkitRequestAnimationFrame || 
-            window.mozRequestAnimationFrame    || 
-            window.oRequestAnimationFrame      || 
-            window.msRequestAnimationFrame     || 
-            function( callback ){
-              window.setTimeout(callback, 1000 / 60);
-            };
-  })();
-
   ammo = 0;
   shotgunPresent = false;
   $("#ammo").html(ammo);
@@ -100,14 +89,9 @@ $(document).ready(function() {
   */
 
   /* Start draw loop */
-  //setInterval(draw,50);
+  setInterval(draw,50);
 
   ctx = $('#game')[0].getContext('2d');
-  (function animloop(){
-    requestAnimFrame(animloop);
-    draw();
-   })();
-
 });
 
 

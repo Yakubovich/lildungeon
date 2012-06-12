@@ -107,6 +107,10 @@ function hitTest (r1, r2) {
      return false;
 }
 
+function quickRound (num) {
+  return (0.5 + num) << 0;
+}
+
 
 /* The draw loop */
 function draw() {
@@ -390,8 +394,8 @@ function Sprite(args) {
                     row * this.height,
                     this.width,
                     this.height,
-                    Math.round(this.position.x),
-                    Math.round(this.position.y),
+                    quickRound(this.position.x),
+                    quickRound(this.position.y),
                     this.width,
                     this.height); 
     } else {
@@ -403,8 +407,8 @@ function Sprite(args) {
                     row * this.height,
                     this.width,
                     this.height,
-                    -Math.round(this.position.x) - this.width,
-                    Math.round(this.position.y),
+                    -quickRound(this.position.x) - this.width,
+                    quickRound(this.position.y),
                     this.width,
                     this.height); 
       ctx.restore();

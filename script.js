@@ -390,8 +390,8 @@ function Sprite(args) {
                     row * this.height,
                     this.width,
                     this.height,
-                    this.position.x,
-                    this.position.y,
+                    Math.round(this.position.x),
+                    Math.round(this.position.y),
                     this.width,
                     this.height); 
     } else {
@@ -403,8 +403,8 @@ function Sprite(args) {
                     row * this.height,
                     this.width,
                     this.height,
-                    -this.position.x - this.width,
-                    this.position.y,
+                    -Math.round(this.position.x) - this.width,
+                    Math.round(this.position.y),
                     this.width,
                     this.height); 
       ctx.restore();

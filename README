@@ -1,1 +1,23 @@
-Hi!
+This is a zombie survival game build using the HTML5 canvas element.
+Your objective is to survive and rescue people before they get bitten by zombies.
+
+Todo:
+
+- Original artwork
+
+- Levels that increase in difficulty. A level will have the following attributes:
+  - Wall placement
+  - Hints (for early levels)
+  - Player placement
+  - Number of people
+  - Number of zombies
+  - Probability of new people spawning
+  - Number of people spawning
+  - Quota of people to rescue
+  - Weapon types and spawn probability
+
+- Instead of the score incrementing when a person is picked up, there should be a
+  quota of people to rescue, and drop zones that appear when the quota is reached.
+  The score should increment only when the people are safely dropped at the zones.
+
+- More weapon types (including grenades and flame throwers)

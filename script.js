@@ -27,54 +27,18 @@ var SHOTGUN = 4;
 var ITEM = 5;
 var FOLLOWER = 6;
 
+var interval;
 var ctx;
 var score;
 var shotgunPresent;
 var player;
 var ammo;
 var sprites;
+var time;
 
 $(document).ready(function() {
 
-  ammo = 1;
-  score = 0;
-  sprites = [];
-  shotgunPresent = false;
-  $("#ammo").html(ammo);
-  $("#game").attr("width", canvasWidth);
-  $("#game").attr("height", canvasHeight);
-
-  /* Initialize player */
-  player = new Character({ src:    "ch-hero.png",
-                           width:  24,
-                           height: 33,
-                           xPos:   canvasWidth/2,
-                           yPos:   3,
-                           stop:   true,
-                           speed:  PLAYER_SPEED
-                         });
-  sprites.push(player);
-
-  /* Initialize walls */
-  sprites.push(new Wall({ width: 10, height: canvasHeight/2, xPos: 0, yPos: 0 }));
-  sprites.push(new Wall({ width: 10, height: canvasHeight/2, xPos: canvasWidth - 10, yPos: 0 }));
-  sprites.push(new Wall({ width: 10, height: canvasHeight/2, xPos: 0, yPos: canvasHeight/2 + 40 }));
-  sprites.push(new Wall({ width: 10, height: canvasHeight/2, xPos: canvasWidth - 10, yPos: canvasHeight/2 + 40 }));
-  sprites.push(new Wall({ width: canvasWidth / 2, height: 10, xPos: 0, yPos: 0 }));
-  sprites.push(new Wall({ width: canvasWidth / 2, height: 10, xPos: 0, yPos: canvasHeight - 10 }));
-  sprites.push(new Wall({ width: canvasWidth / 2, height: 10, xPos: canvasWidth/2 + 40, yPos: 0 }));
-  sprites.push(new Wall({ width: canvasWidth / 2, height: 10, xPos: canvasWidth/2 + 40, yPos: canvasHeight - 10 }));
-
-  /* Place some sprites in non-colliding positions around the map */
-  for (var i = 0; i < 30; i++) {
-    if (i == 0)
-      addChar(ZOMBIE);
-    else
-      addChar(CHAR);
-  }
-
-  /* Start draw loop */
-  setInterval(draw,50);
+  init();
 
   ctx = $('#game')[0].getContext('2d');
 
@@ -97,13 +61,79 @@ $(document).ready(function() {
       for (var i = 0; i < sprites.length && !hit; i++)
         if (hitTest(wall, sprites[i]))
           hit = true;
-      if (!hit)
+      if (!hit) {
         sprites.push(wall);
+        wall.nextFrame();
+      }
     }
   });
 
   $("#game").fadeIn();
+
+  $("#clear").click(function(){
+    sprites = [];
+    initWalls();
+    draw();
+    clearInterval(interval);
+  });
+
+  $("#reset").click(function(){
+    $("#game").fadeOut(function() {
+      $("#game").removeClass("gray-out").show();
+      init();
+    });
+  });
 });
+
+function init () {
+  time = 0;
+  ammo = 1;
+  score = 0;
+  sprites = [];
+  shotgunPresent = false;
+  $("#ammo").html(ammo);
+  $("#score").html(score);
+  $("#game").attr("width", canvasWidth);
+  $("#game").attr("height", canvasHeight);
+
+  /* Initialize player */
+  player = new Character({ src:    "ch-hero.png",
+                           width:  24,
+                           height: 33,
+                           xPos:   canvasWidth/2,
+                           yPos:   3,
+                           stop:   true,
+                           speed:  PLAYER_SPEED
+                         });
+  sprites.push(player);
+  
+  initWalls();
+
+  /* Place some sprites in non-colliding positions around the map */
+  for (var i = 0; i < 30; i++) {
+    if (i == 0)
+      addChar(ZOMBIE);
+    else
+      addChar(CHAR);
+  }
+
+  /* Start draw loop */
+  clearInterval(interval);
+  interval = setInterval(draw,50);
+
+}
+
+function initWalls () {
+  /* Initialize walls */
+  sprites.push(new Wall({ width: 10, height: canvasHeight/2, xPos: 0, yPos: 0 }));
+  sprites.push(new Wall({ width: 10, height: canvasHeight/2, xPos: canvasWidth - 10, yPos: 0 }));
+  sprites.push(new Wall({ width: 10, height: canvasHeight/2, xPos: 0, yPos: canvasHeight/2 + 40 }));
+  sprites.push(new Wall({ width: 10, height: canvasHeight/2, xPos: canvasWidth - 10, yPos: canvasHeight/2 + 40 }));
+  sprites.push(new Wall({ width: canvasWidth / 2, height: 10, xPos: 0, yPos: 0 }));
+  sprites.push(new Wall({ width: canvasWidth / 2, height: 10, xPos: 0, yPos: canvasHeight - 10 }));
+  sprites.push(new Wall({ width: canvasWidth / 2, height: 10, xPos: canvasWidth/2 + 40, yPos: 0 }));
+  sprites.push(new Wall({ width: canvasWidth / 2, height: 10, xPos: canvasWidth/2 + 40, yPos: canvasHeight - 10 }));
+}
 
 /* Place a new character or zombie sprite in a random, non-colliding position */
 function addChar (type, position, direction) {
@@ -148,6 +178,9 @@ function quickRound (num) {
 
 /* The draw loop */
 function draw() {
+
+  time++;
+
   ctx.clearRect(0,0,canvasWidth,canvasHeight);
 
   if (sprites.length < 300) {
@@ -194,15 +227,8 @@ function draw() {
       sprites[i].randomDir();
 
     /* Don't run off the map */
-    if (sprites[i].position.x + sprites[i].width >= canvasWidth)
-      sprites[i].direction = LEFT;
-    if (sprites[i].position.x <= 0)
-      sprites[i].direction = RIGHT;
-    if (sprites[i].position.y + sprites[i].height >= canvasHeight)
-      sprites[i].direction = UP;
-    if (sprites[i].position.y <= 0)
-      sprites[i].direction = DOWN;
-
+    if (sprites[i].position.x + sprites[i].width >= canvasWidth || sprites[i].position.x <= 0 || sprites[i].position.y + sprites[i].height >= canvasHeight || sprites[i].position.y <= 0)
+      sprites[i].reverse();
 
     /* Collision detection */
     var elementToRemove = -1;
@@ -227,14 +253,15 @@ function draw() {
         } else if (sprites[i].type == ZOMBIE || sprites[j].type == ZOMBIE) {
           sprites[i].zombify();
           sprites[j].zombify();
+          if (sprites[i] == player || sprites[j] == player) {
+            $("#game").addClass("gray-out");
+          }
         } else {
           if (sprites[i] == player && sprites[j].type == CHAR) {
-            //sprites.splice(j, 1);
             score++;
             sprites[j].type = FOLLOWER;
             $("#score").html(score);
           } else if (sprites[j] == player && sprites[i].type == CHAR) {
-            //sprites.splice(i, 1);
             score++;
             sprites[i].type = FOLLOWER;
             $("#score").html(score);
@@ -255,9 +282,8 @@ function draw() {
   /* Sort by Y position so that lower sprites overlap higher ones */
   sprites.sort(function(a, b) {
     var a1 = a.position.y + a.height, b1 = b.position.y + b.height;
-    if (a1 == b1){
+    if (a1 == b1)
       return 0;
-    }
     return a1 > b1 ? 1 : -1;
   });
 }
@@ -538,7 +564,7 @@ Character.prototype.nextFrame = function() {
 
   if (this.stop) {
     this.frame = 0;
-  } else {
+  } else if (time % 2 == 0) {
     this.frame++;
     if (this.frame == this.totalframes)
       this.frame = 0;
@@ -592,6 +618,7 @@ $(document).keypress(function(e) {
 /* THE KEY DOWN EVENT HANDLER */
 /* Used for controlling the player with the arrow keys */
 $(document).keydown(function(e) {
+  if (player.type != ZOMBIE)
   switch(e.keyCode){
     case 40:
       player.direction = DOWN;

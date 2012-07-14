@@ -14,4 +14,11 @@ h1 {
   border-radius: 10px;
   background: url("bg.png");
   box-shadow: 0px 0px 100px 0px black;
+  display: block;
+  margin-bottom: 50px;
+}
+
+#game.gray-out {
+  -webkit-filter: grayscale(100%);
+  -webkit-transition: all 1s;
 }
